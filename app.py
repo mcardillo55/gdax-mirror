@@ -19,8 +19,7 @@ collection_map = {'BTC-USD': db.btc_usd,
 
 
 def datettime_to_epoch(date_in):
-    epoch = datetime.datetime.fromtimestamp(0)
-    epoch = epoch.replace(tzinfo=pytz.utc)
+    epoch = datetime.datetime.fromtimestamp(0, pytz.utc)
     diff = date_in - epoch
     return int(diff.total_seconds())
 
