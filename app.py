@@ -27,11 +27,17 @@ def datettime_to_epoch(date_in):
 
 @app.route('/products/<product_id>/candles/')
 def get_historic_data(product_id):
-    start = str(request.args.get('start', ''))
-    end = str(request.args.get('end', ''))
-    print(start)
-    print(end)
     granularity = int(request.args.get('granularity', ''))
+
+    start = request.args.get('start', '')
+    start = dateutil.parser.parse(start)
+    start = start - datetime.timedelta(minutes=start.minute % granularity, seconds=start.second, microseconds=start.microsecond)
+    start = start.isoformat()
+
+    end = request.args.get('end', '')
+    end = dateutil.parser.parse(end)
+    end = end - datetime.timedelta(minutes=end.minute % granularity, seconds=end.second, microseconds=end.microsecond)
+    end = end.isoformat()
 
     cur_time = dateutil.parser.parse(start)
     cur_time = cur_time.replace(tzinfo=pytz.utc)
