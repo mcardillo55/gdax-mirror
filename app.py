@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from decimal import Decimal
+import pytz
 import datetime
 import pymongo
 import dateutil.parser
@@ -15,6 +16,13 @@ collection_map = {'BTC-USD': db.btc_usd,
                   'LTC-USD': db.ltc_usd,
                   'ETH-BTC': db.eth_btc,
                   'LTC-BTC': db.ltc_btc}
+
+
+def datettime_to_epoch(date_in):
+    epoch = datetime.datetime.fromtimestamp(0)
+    epoch = epoch.replace(tzinfo=pytz.utc)
+    diff = date_in - epoch
+    return int(diff.total_seconds())
 
 
 @app.route('/products/<product_id>/candles/')
@@ -37,7 +45,7 @@ def get_historic_data(product_id):
     volume = Decimal('0.0')
     for doc in ret:
         if dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
-            ret_list.append([int(cur_time.timestamp()), str(low_price), str(high_price), str(open_price), str(close_price), str(volume)])
+            ret_list.append([datettime_to_epoch(cur_time), str(low_price), str(high_price), str(open_price), str(close_price), str(volume)])
             open_price = None
             high_price = None
             low_price = None
@@ -52,6 +60,6 @@ def get_historic_data(product_id):
             low_price = Decimal(doc.get('price'))
         close_price = Decimal(doc.get('price'))
         volume += Decimal(doc.get('size'))
-    ret_list.append([int(cur_time.timestamp()), str(low_price), str(high_price), str(open_price), str(close_price), str(volume)])
+    ret_list.append([datettime_to_epoch(cur_time), str(low_price), str(high_price), str(open_price), str(close_price), str(volume)])
 
     return jsonify(ret_list)
