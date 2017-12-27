@@ -33,10 +33,7 @@ def get_historic_data(product_id):
     start = start - datetime.timedelta(minutes=start.minute % granularity, seconds=start.second, microseconds=start.microsecond)
     start = start.isoformat()
 
-    end = request.args.get('end', '')
-    end = dateutil.parser.parse(end)
-    end = end - datetime.timedelta(minutes=end.minute % granularity, seconds=end.second, microseconds=end.microsecond)
-    end = end.isoformat()
+    end = str(request.args.get('end', ''))
 
     cur_time = dateutil.parser.parse(start)
     cur_time = cur_time.replace(tzinfo=pytz.utc)
