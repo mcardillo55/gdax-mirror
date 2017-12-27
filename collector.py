@@ -1,6 +1,7 @@
 # import PyMongo and connect to a local, running Mongo instance
 from pymongo import MongoClient
 import gdax
+import time
 
 
 class myWSClient(gdax.WebsocketClient):
@@ -22,6 +23,21 @@ class myWSClient(gdax.WebsocketClient):
         if msg.get('type') == 'match':
             self.collection_map[msg.get('product_id')].insert_one(msg)
 
+    def on_error(self, e):
+        self.stop = True
+        raise e
+
 
 wsClient = myWSClient(url="wss://ws-feed.gdax.com", products=['BTC-USD', 'BCH-USD', 'ETH-USD', 'LTC-USD', 'ETH-BTC', 'LTC-BTC'], should_print=False)
 wsClient.start()
+while True:
+    try:
+        time.sleep(1)
+    except KeyboardInterrupt:
+        wsClient.close()
+        break
+    except Exception:
+        wsClient.close()
+        print("Websocket Error... Restarting...")
+        time.sleep(1)
+        wsClient.start()
