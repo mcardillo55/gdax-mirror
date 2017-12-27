@@ -38,7 +38,7 @@ def get_historic_data(product_id):
     cur_time = dateutil.parser.parse(start)
     cur_time = cur_time.replace(tzinfo=pytz.utc)
 
-    ret = collection_map[product_id].find({'time': {'$gte': start, '$lt': end}}, {'_id': False})
+    ret = collection_map[product_id].find({'time': {'$gte': start, '$lt': end}}, {'_id': False}).sort('time', 1)
 
     ret_list = []
     open_price = None
