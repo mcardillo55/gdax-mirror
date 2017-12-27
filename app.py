@@ -50,10 +50,9 @@ def get_historic_data(product_id):
         if dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
             if close_price:
                 ret_list.insert(0, [datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
-            else:
-                while dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
-                    cur_time = cur_time + datetime.timedelta(minutes=granularity)
-                cur_time = cur_time - datetime.timedelta(minutes=granularity)
+            while dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
+                cur_time = cur_time + datetime.timedelta(minutes=granularity)
+            cur_time = cur_time - datetime.timedelta(minutes=granularity)
             open_price = None
             high_price = None
             low_price = None
