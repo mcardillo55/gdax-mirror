@@ -49,7 +49,7 @@ def get_historic_data(product_id):
     for doc in ret:
         if dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
             if close_price:
-                ret_list.append([datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
+                ret_list.insert(0, [datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
             else:
                 while dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
                     cur_time = cur_time + datetime.timedelta(minutes=granularity)
@@ -68,6 +68,6 @@ def get_historic_data(product_id):
             low_price = Decimal(doc.get('price'))
         close_price = Decimal(doc.get('price'))
         volume += Decimal(doc.get('size'))
-    ret_list.append([datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
+    ret_list.insert(0, [datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
 
     return jsonify(ret_list)
