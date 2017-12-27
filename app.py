@@ -52,21 +52,23 @@ def get_historic_data(product_id):
     volume = Decimal('0.0')
     for doc in ret:
         if dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
-            ret_list.append([datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
+            if close_price:
+                ret_list.append([datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
             open_price = None
             high_price = None
             low_price = None
             close_price = None
             volume = Decimal('0.0')
             cur_time = cur_time + datetime.timedelta(minutes=granularity)
-        if not open_price:
-            open_price = Decimal(doc.get('price'))
-        if not high_price or Decimal(doc.get('price')) > high_price:
-            high_price = Decimal(doc.get('price'))
-        if not low_price or Decimal(doc.get('price')) < low_price:
-            low_price = Decimal(doc.get('price'))
-        close_price = Decimal(doc.get('price'))
-        volume += Decimal(doc.get('size'))
+        else:
+            if not open_price:
+                open_price = Decimal(doc.get('price'))
+            if not high_price or Decimal(doc.get('price')) > high_price:
+                high_price = Decimal(doc.get('price'))
+            if not low_price or Decimal(doc.get('price')) < low_price:
+                low_price = Decimal(doc.get('price'))
+            close_price = Decimal(doc.get('price'))
+            volume += Decimal(doc.get('size'))
     ret_list.append([datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
 
     return jsonify(ret_list)
