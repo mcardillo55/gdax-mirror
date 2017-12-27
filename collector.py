@@ -32,12 +32,15 @@ wsClient = myWSClient(url="wss://ws-feed.gdax.com", products=['BTC-USD', 'BCH-US
 wsClient.start()
 while True:
     try:
+        if wsClient.error:
+            wsClient.close()
+            print("Websocket Error... Restarting...")
+            wsClient.error = None
+            time.sleep(1)
+            wsClient.start()
         time.sleep(1)
     except KeyboardInterrupt:
         wsClient.close()
         break
     except Exception:
-        wsClient.close()
-        print("Websocket Error... Restarting...")
-        time.sleep(1)
-        wsClient.start()
+        continue
