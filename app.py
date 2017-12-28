@@ -27,46 +27,36 @@ def datettime_to_epoch(date_in):
 @app.route('/products/<product_id>/candles/')
 def get_historic_data(product_id):
     granularity = int(request.args.get('granularity', ''))
+    start = dateutil.parser.parse(request.args.get('start', ''))
+    start = start.replace(tzinfo=pytz.utc)
+    end = dateutil.parser.parse(request.args.get('end', ''))
+    end = end.replace(tzinfo=pytz.utc)
 
-    start = request.args.get('start', '')
-    start = dateutil.parser.parse(start)
-    start = start - datetime.timedelta(minutes=start.minute % granularity, seconds=start.second, microseconds=start.microsecond)
-    start = start.isoformat()
-
-    end = str(request.args.get('end', ''))
-
-    cur_time = dateutil.parser.parse(start)
-    cur_time = cur_time.replace(tzinfo=pytz.utc)
-
-    ret = collection_map[product_id].find({'time': {'$gte': start, '$lt': end}}, {'_id': False}).sort('time', 1)
+    cur_end = end
+    cur_end = cur_end.replace(tzinfo=pytz.utc)
+    cur_start = cur_end - datetime.timedelta(minutes=cur_end.minute % granularity, seconds=cur_end.second, microseconds=cur_end.microsecond)
 
     ret_list = []
-    open_price = None
-    high_price = None
-    low_price = None
-    close_price = None
-    volume = Decimal('0.0')
-    for doc in ret:
-        if dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
-            if close_price:
-                ret_list.insert(0, [datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
-            while dateutil.parser.parse(doc.get('time')) > cur_time + datetime.timedelta(minutes=granularity):
-                cur_time = cur_time + datetime.timedelta(minutes=granularity)
-            cur_time = cur_time - datetime.timedelta(minutes=granularity)
-            open_price = None
-            high_price = None
-            low_price = None
-            close_price = None
-            volume = Decimal('0.0')
-            cur_time = cur_time + datetime.timedelta(minutes=granularity)
-        if not open_price:
-            open_price = Decimal(doc.get('price'))
-        if not high_price or Decimal(doc.get('price')) > high_price:
-            high_price = Decimal(doc.get('price'))
-        if not low_price or Decimal(doc.get('price')) < low_price:
-            low_price = Decimal(doc.get('price'))
-        close_price = Decimal(doc.get('price'))
-        volume += Decimal(doc.get('size'))
-    ret_list.insert(0, [datettime_to_epoch(cur_time), low_price, high_price, open_price, close_price, volume])
+
+    while cur_start > start:
+        total_volume = Decimal('0.0')
+        pipeline = [
+            {'$match': {'time': {'$gte': cur_start.isoformat(), '$lt': cur_end.isoformat()}}},
+            {'$sort': {'time': 1}},
+            {'$group': {'_id': None, 'open': {'$first': '$price'}, 'high': {'$max': '$price'}, 'low': {'$min': '$price'}, 'close': {'$last': '$price'}}}
+        ]
+        try:
+            ret = next(collection_map[product_id].aggregate(pipeline))
+        except StopIteration:
+            break
+
+        vol_ret = collection_map[product_id].find({'time': {'$gte': cur_start.isoformat(), '$lt': cur_end.isoformat()}}, {'_id': 0, 'size': 1})
+        for vol_record in vol_ret:
+            total_volume += Decimal(vol_record['size'])
+
+        ret_list.append([datettime_to_epoch(cur_start), ret['low'], ret['high'], ret['open'], ret['close'], total_volume])
+
+        cur_start = cur_start - datetime.timedelta(minutes=granularity)
+        cur_end = cur_start + datetime.timedelta(minutes=granularity) - datetime.timedelta(microseconds=1)
 
     return jsonify(ret_list)
