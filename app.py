@@ -48,13 +48,14 @@ def get_historic_data(product_id):
         try:
             ret = next(collection_map[product_id].aggregate(pipeline))
         except StopIteration:
-            break
+            pass
 
         vol_ret = collection_map[product_id].find({'time': {'$gte': cur_start.isoformat(), '$lt': cur_end.isoformat()}}, {'_id': 0, 'size': 1})
         for vol_record in vol_ret:
             total_volume += Decimal(vol_record['size'])
 
-        ret_list.append([datettime_to_epoch(cur_start), ret['low'], ret['high'], ret['open'], ret['close'], total_volume])
+        if total_volume > Decimal('0.0'):
+            ret_list.append([datettime_to_epoch(cur_start), Decimal(ret['low']), Decimal(ret['high']), Decimal(ret['open']), Decimal(ret['close']), total_volume])
 
         cur_start = cur_start - datetime.timedelta(minutes=granularity)
         cur_end = cur_start + datetime.timedelta(minutes=granularity) - datetime.timedelta(microseconds=1)
