@@ -41,7 +41,7 @@ def get_historic_data(product_id):
     while cur_start > start:
         total_volume = Decimal('0.0')
         pipeline = [
-            {'$match': {'time': {'$gte': cur_start.isoformat(), '$lt': cur_end.isoformat()}}},
+            {'$match': {'time': {'$gte': cur_start, '$lt': cur_end}}},
             {'$sort': {'time': 1}},
             {'$group': {'_id': None, 'open': {'$first': '$price'}, 'high': {'$max': '$price'}, 'low': {'$min': '$price'}, 'close': {'$last': '$price'}}}
         ]
@@ -50,7 +50,7 @@ def get_historic_data(product_id):
         except StopIteration:
             pass
 
-        vol_ret = collection_map[product_id].find({'time': {'$gte': cur_start.isoformat(), '$lt': cur_end.isoformat()}}, {'_id': 0, 'size': 1})
+        vol_ret = collection_map[product_id].find({'time': {'$gte': cur_start, '$lt': cur_end}}, {'_id': 0, 'size': 1})
         for vol_record in vol_ret:
             total_volume += Decimal(vol_record['size'])
 
