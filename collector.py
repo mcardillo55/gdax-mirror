@@ -1,5 +1,6 @@
 # import PyMongo and connect to a local, running Mongo instance
 from pymongo import MongoClient
+import dateutil.parser
 import gdax
 import time
 
@@ -21,6 +22,7 @@ class myWSClient(gdax.WebsocketClient):
 
     def on_message(self, msg):
         if msg.get('type') == 'match':
+            msg['time'] = dateutil.parser.parse(msg.get('time'))
             self.collection_map[msg.get('product_id')].insert_one(msg)
 
     def on_error(self, e):
